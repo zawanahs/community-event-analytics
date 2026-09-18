@@ -21,7 +21,7 @@
   "engines": {
     "node": ">=22"
   },
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "echarts": "^6.1.0",

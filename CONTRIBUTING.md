@@ -26,4 +26,4 @@ For interface changes, also inspect both dashboard tabs, test at least one filte
 
 Describe the user problem, the approach, the checks performed, and any data-contract or privacy implications. Keep unrelated changes in separate pull requests.
 
-By contributing, you agree that your contribution is licensed under the repository's ISC License.
+By contributing, you agree that your contribution is licensed under the repository's MIT License.

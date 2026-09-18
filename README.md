@@ -91,4 +91,4 @@ Environment variables used during the build determine whether the deployed site 
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a change and [`SECURITY.md`](SECURITY.md) for private vulnerability and data-exposure reporting guidance.
 
-The project is available under the [ISC License](LICENSE).
+The project is available under the [MIT License](LICENSE).
