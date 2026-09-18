@@ -1,0 +1,42 @@
+{
+  "name": "community-event-analytics",
+  "version": "0.1.0",
+  "description": "Configurable event analytics dashboards for community organizers",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "test": "vitest run",
+    "scan:generic": "node scripts/check-generic-repo.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "community",
+    "events",
+    "analytics",
+    "dashboard",
+    "open-source"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "echarts": "^6.1.0",
+    "papaparse": "^5.6.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "sentiment": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/sentiment": "^5.0.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^5.0.1"
+  }
+}

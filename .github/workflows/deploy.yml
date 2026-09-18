@@ -1,0 +1,58 @@
+name: Deploy dashboards to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    env:
+      VITE_DATA_SOURCE: ${{ vars.VITE_DATA_SOURCE }}
+      VITE_GOOGLE_SHEET_ID: ${{ vars.VITE_GOOGLE_SHEET_ID }}
+      VITE_REPORTING_TIMEZONE: ${{ vars.VITE_REPORTING_TIMEZONE }}
+      VITE_SOURCE_LABEL: ${{ vars.VITE_SOURCE_LABEL }}
+      VITE_GOOGLE_TAB_EVENTS: ${{ vars.VITE_GOOGLE_TAB_EVENTS }}
+      VITE_GOOGLE_TAB_SURVEY_RESPONSES: ${{ vars.VITE_GOOGLE_TAB_SURVEY_RESPONSES }}
+      VITE_GOOGLE_TAB_FEEDBACK_ANSWERS: ${{ vars.VITE_GOOGLE_TAB_FEEDBACK_ANSWERS }}
+      VITE_GOOGLE_TAB_REGISTRATIONS: ${{ vars.VITE_GOOGLE_TAB_REGISTRATIONS }}
+      VITE_GOOGLE_TAB_PARTICIPANTS: ${{ vars.VITE_GOOGLE_TAB_PARTICIPANTS }}
+      VITE_COMMUNITY_NAME: ${{ vars.VITE_COMMUNITY_NAME }}
+      VITE_COMMUNITY_SHORT_NAME: ${{ vars.VITE_COMMUNITY_SHORT_NAME }}
+      VITE_COMMUNITY_LOCATION: ${{ vars.VITE_COMMUNITY_LOCATION }}
+      VITE_DASHBOARD_TITLE: ${{ vars.VITE_DASHBOARD_TITLE }}
+      VITE_DASHBOARD_SUBTITLE: ${{ vars.VITE_DASHBOARD_SUBTITLE }}
+      VITE_DASHBOARD_FOOTER: ${{ vars.VITE_DASHBOARD_FOOTER }}
+      VITE_COLOR_PRIMARY: ${{ vars.VITE_COLOR_PRIMARY }}
+      VITE_COLOR_SECONDARY: ${{ vars.VITE_COLOR_SECONDARY }}
+      VITE_COLOR_ACCENT: ${{ vars.VITE_COLOR_ACCENT }}
+      VITE_COLOR_SURFACE: ${{ vars.VITE_COLOR_SURFACE }}
+      VITE_COLOR_CARD: ${{ vars.VITE_COLOR_CARD }}
+      VITE_COLOR_INK: ${{ vars.VITE_COLOR_INK }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

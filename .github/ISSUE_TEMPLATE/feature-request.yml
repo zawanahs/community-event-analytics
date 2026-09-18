@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest a reusable improvement for community event analytics.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Community need
+      description: What decision or workflow would this improve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Data and privacy considerations
+      description: What data would be needed, and what disclosure risks should be considered?

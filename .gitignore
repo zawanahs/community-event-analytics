@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.stackdump
+.claude/
+
+# local data exports — never commit data to the open-source repo
+data-source-excel/

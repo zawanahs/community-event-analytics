@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible problem without including private community data.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach real participant data, credentials, or private spreadsheet links.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the observed and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Use the bundled synthetic data or a minimal fictional example.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include screenshots only after checking that they contain no private data.
