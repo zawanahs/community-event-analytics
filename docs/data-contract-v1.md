@@ -155,6 +155,7 @@ Adapters must report duplicate keys, orphan rows, and event mismatches. They may
 
 - Numeric strings may contain grouping separators and surrounding whitespace.
 - Counts must be whole and non-negative.
+- Satisfaction and recommendation values must fall within their configured inclusive rating bounds; the default scale is 1–10.
 - Rates are recomputed from their numerators and denominators whenever canonical rows permit it; subgroup rates are not averaged.
 - Invalid numbers become validation errors, not zero.
 

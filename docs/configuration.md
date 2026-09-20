@@ -15,6 +15,7 @@ Edit `src/config.ts` for settings that are better reviewed in version control:
 - `navigation`: names of the two dashboard views.
 - `terminology`: participant, registration, and event terms used in dashboard copy.
 - `feedbackRoles`: displayed survey-question labels and the source values mapped to each canonical role.
+- `ratings`: valid score bounds plus the satisfaction thresholds used for verdicts and promoter/passive/detractor bands.
 - `segments`: displayed labels, canonical registration fields, category order, and missing-value labels.
 - `privacy`: team organizations to exclude and the minimum segment size.
 
@@ -39,6 +40,10 @@ fieldAliases: {
 ```
 
 Canonical names always take precedence over aliases. Use a dedicated adapter under `src/data/adapters/` when the source needs row expansion, joins, or other structural transformations.
+
+Aliases are supported for required fields, optional fields, counts, booleans, ratings, dates, and segment values across all five datasets. Invalid aliased values are subject to the same contract validation as canonical columns.
+
+Set `VITE_REPORTING_TIMEZONE` to an IANA timezone such as `Asia/Singapore` or `America/New_York`. Date-only values and period filters are anchored to that reporting timezone rather than the visitor's browser timezone. The adapter accepts ISO `YYYY-MM-DD`, the documented `M/D/YYYY` source format, and ISO timestamps that include `Z` or an explicit numeric offset.
 
 ## Pre-publication checklist
 

@@ -118,6 +118,7 @@ export function verdictBannerHtml(verdict, scopeLabel, isSafe = true) {
     return `<div class="verdict-inner"><div class="empty-note">No satisfaction ratings in this selection</div></div>`;
   }
   const copy = VERDICT_COPY[verdict.label];
+  const satisfaction = communityConfig.ratings.satisfaction;
   return `
     <div class="verdict-inner">
       <div class="verdict-main">
@@ -125,9 +126,9 @@ export function verdictBannerHtml(verdict, scopeLabel, isSafe = true) {
         <div class="verdict-copy">
           <div class="verdict-gloss">${esc(copy.gloss)}</div>
           <div class="verdict-meta">
-            Average satisfaction <b>${verdict.mean.toFixed(1)} / 10</b> across
+            Average satisfaction <b>${verdict.mean.toFixed(1)} / ${satisfaction.max}</b> across
             ${verdict.total.toLocaleString()} rating${verdict.total === 1 ? '' : 's'} for ${esc(scopeLabel)}
-            · ${Math.round(verdict.highShare * 100)}% scored 8 or above.
+            · ${Math.round(verdict.highShare * 100)}% scored ${satisfaction.verdictPositiveMin} or above.
           </div>
         </div>
       </div>

@@ -46,6 +46,17 @@ export interface CommunityConfig {
     chart: readonly [string, string, string, string, string];
   };
   feedbackRoles: readonly { id: FeedbackRoleId; label: string; sourceValues: readonly string[] }[];
+  ratings: {
+    satisfaction: {
+      min: number;
+      max: number;
+      verdictPositiveMin: number;
+      verdictNeutralMin: number;
+      promoterMin: number;
+      passiveMin: number;
+    };
+    recommendation: { min: number; max: number };
+  };
   segments: Record<SegmentId, SegmentConfig>;
   privacy: { excludedOrganisations: readonly string[]; minimumSegmentSize: number };
 }
@@ -90,7 +101,9 @@ export const communityConfig = {
     },
     // Canonical fields are read first, followed by these accepted source aliases.
     fieldAliases: {
-      events: {},
+      events: {
+        event_name: ['title', 'session_name'],
+      },
       surveyResponses: {
         satisfaction: ['satisfaction_1_10'],
         recommend: ['recommend_1_10'],
@@ -125,6 +138,17 @@ export const communityConfig = {
     { id: 'improvement', label: 'What could improve', sourceValues: ['improvement', 'text_improve'] },
     { id: 'topic_request', label: 'Requested next', sourceValues: ['topic_request', 'text_interest'] },
   ],
+  ratings: {
+    satisfaction: {
+      min: 1,
+      max: 10,
+      verdictPositiveMin: 8,
+      verdictNeutralMin: 6,
+      promoterMin: 9,
+      passiveMin: 7,
+    },
+    recommendation: { min: 1, max: 10 },
+  },
   segments: {
     experience: {
       label: 'Experience level', shortLabel: 'Experience', registrationField: 'experience_segment', responseField: 'experience_segment',

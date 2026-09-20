@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { canShowFeedback, disclosureGroups, protectedCrossTab } from './privacy';
 
-type Row = { group: string; child?: string; response_id?: string };
+type Row = { group: string; child?: string; response_id?: string; participant_id?: string };
 const rows = (group: string, count: number, child?: string): Row[] =>
   Array.from({ length: count }, (_, index) => ({ group, child, response_id: `${group}-${index}` }));
 
@@ -42,5 +42,30 @@ describe('privacy suppression', () => {
 
     expect(canShowFeedback([...nineRows, ...nineRows])).toBe(false);
     expect(canShowFeedback(tenRows)).toBe(true);
+  });
+
+  it('does not treat repeated registrations from one participant as a safe segment', () => {
+    const repeated = Array.from({ length: 10 }, (_, index) => ({
+      group: 'Small segment',
+      participant_id: 'participant-1',
+      response_id: `registration-${index}`,
+    }));
+
+    const result = disclosureGroups(repeated, (row) => row.group, (row) => row.participant_id);
+
+    expect(result.groups).toEqual([]);
+    expect(result.hasUnsafeRemainder).toBe(true);
+  });
+
+  it('allows a segment with the minimum number of distinct participants', () => {
+    const distinct = Array.from({ length: 10 }, (_, index) => ({
+      group: 'Safe segment',
+      participant_id: `participant-${index}`,
+    }));
+
+    const result = disclosureGroups(distinct, (row) => row.group, (row) => row.participant_id);
+
+    expect(result.groups[0]).toMatchObject({ count: 10, privacyCount: 10 });
+    expect(result.hasUnsafeRemainder).toBe(false);
   });
 });

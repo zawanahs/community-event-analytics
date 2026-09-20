@@ -24,8 +24,11 @@ const genderOf = (r) => segmentValue(r, 'gender');
 const sectorOf = (r) => segmentValue(r, 'sector');
 const jobFamilyOf = (r) => segmentValue(r, 'jobFamily');
 const organizationOf = (r) => segmentValue(r, 'organization');
+const participantIdOf = (r) => r.participant_id;
 const terms = communityConfig.terminology;
 const segments = communityConfig.segments;
+const satisfaction = communityConfig.ratings.satisfaction;
+const recommendation = communityConfig.ratings.recommendation;
 
 export function initCommunity(root, data) {
   root.innerHTML = `
@@ -160,17 +163,19 @@ export function initCommunity(root, data) {
 
   function drawKpis() {
     const k = kpisCommunity(slice);
-    const gender = disclosureGroups(slice.registrations, genderOf);
+    const gender = disclosureGroups(slice.registrations, genderOf, participantIdOf);
     const safeGender = !gender.hasUnsafeRemainder && gender.groups.length > 0;
-    const safeSectors = disclosureGroups(slice.registrations, sectorOf);
+    const safeSectors = disclosureGroups(slice.registrations, sectorOf, participantIdOf);
     const topSector = !safeSectors.hasUnsafeRemainder
       ? [...safeSectors.groups].sort((a, b) => b.count - a.count)[0] ?? null
       : null;
     const genderTotal = gender.groups.reduce((total, group) => total + group.count, 0) || 1;
+    const safePeople = isDisclosureSafe(k.uniquePeople);
+    const safeReturning = isDisclosureSafe(k.returningPopulation);
     root.querySelector('#comm-kpis').innerHTML = [
-      kpiCard(fmtInt(k.uniquePeople), `Unique ${terms.participants}`, 'distinct de-identified participant keys'),
+      kpiCard(safePeople ? fmtInt(k.uniquePeople) : 'Hidden', `Unique ${terms.participants}`, safePeople ? 'distinct de-identified participant keys' : 'Selection is below the privacy threshold'),
       `<div class="card kpi"><div class="kpi-label" style="margin-top:0">${esc(segments.gender.label)} mix</div>${safeGender ? '<div id="gender-donut" style="height:110px"></div>' : '<div class="empty-note">Hidden to protect privacy</div>'}</div>`,
-      kpiCard(fmtPct(k.returningRate), 'Returning rate', `share of ${terms.participants} who registered for another ${terms.event}`),
+      kpiCard(safeReturning ? fmtPct(k.returningRate) : 'Hidden', 'Returning rate', safeReturning ? `share of ${terms.participants} who registered for another ${terms.event}` : 'Selection is below the privacy threshold'),
       kpiCard(topSector ? esc(topSector.key) : 'Hidden', `Largest ${segments.sector.shortLabel.toLowerCase()}`, topSector ? `${fmtInt(topSector.count)} ${terms.registrations}` : 'Segment totals would reveal a small group'),
     ].join('');
 
@@ -182,7 +187,7 @@ export function initCommunity(root, data) {
     }));
     donutChart.setOption({
       ...baseChart,
-      tooltip: { ...baseTooltip, formatter: (p) => `${p.name}: <b>${fmtInt(p.value)}</b> (${p.percent}%)` },
+      tooltip: { ...baseTooltip, formatter: (p) => `${esc(p.name)}: <b>${fmtInt(p.value)}</b> (${p.percent}%)` },
       series: [{
         type: 'pie', radius: ['58%', '85%'], center: ['30%', '50%'],
         itemStyle: { borderColor: C.card, borderWidth: 2 },
@@ -215,7 +220,7 @@ export function initCommunity(root, data) {
   }, true);
 
   function drawYoe() {
-    const groups = protectedCrossTab(slice.registrations, experienceOf, genderOf);
+    const groups = protectedCrossTab(slice.registrations, experienceOf, genderOf, participantIdOf);
     const tab = new Map(groups.map((group) => [group.key, group]));
     const buckets = YOE_ORDER.filter((b) => tab.has(b));
     if (!buckets.length) return hideChart(yoeChart, 'No privacy-safe segments for this selection.');
@@ -225,8 +230,8 @@ export function initCommunity(root, data) {
         ...baseTooltip, trigger: 'axis', axisPointer: { type: 'shadow' },
         formatter: (ps) => {
           const total = ps.reduce((s, p) => s + p.value, 0);
-          return `<b>${ps[0].name}</b> · ${fmtInt(total)} ${terms.registrations}<br/>` +
-            ps.filter((p) => p.value).map((p) => `${p.marker} ${p.seriesName}: ${fmtInt(p.value)}`).join('<br/>');
+          return `<b>${esc(ps[0].name)}</b> · ${fmtInt(total)} ${terms.registrations}<br/>` +
+            ps.filter((p) => p.value).map((p) => `${p.marker} ${esc(p.seriesName)}: ${fmtInt(p.value)}`).join('<br/>');
         },
       },
       legend: { bottom: 0, itemWidth: 12, itemHeight: 12, textStyle: { color: C.ink2, fontSize: 11 } },
@@ -238,7 +243,7 @@ export function initCommunity(root, data) {
   }
 
   function drawTopicGender() {
-    const groups = protectedCrossTab(slice.registrations, (r) => data.eventsById.get(r.event_id)?.topic_primary ?? 'Not stated', genderOf);
+    const groups = protectedCrossTab(slice.registrations, (r) => data.eventsById.get(r.event_id)?.topic_primary ?? 'Not stated', genderOf, participantIdOf);
     const tab = new Map(groups.map((group) => [group.key, group]));
     const topics = [...tab.keys()].sort((a, b) => {
       const tot = (t) => tab.get(t).count;
@@ -260,8 +265,8 @@ export function initCommunity(root, data) {
       ...baseChart,
       tooltip: {
         ...baseTooltip, trigger: 'axis', axisPointer: { type: 'shadow' },
-        formatter: (ps) => `<b>${ps[0].name}</b> · ${fmtInt(totals[ps[0].dataIndex])} ${terms.registrations}<br/>` +
-          ps.filter((p) => p.value).map((p) => `${p.marker} ${p.seriesName}: ${Math.round(p.value)}%`).join('<br/>'),
+        formatter: (ps) => `<b>${esc(ps[0].name)}</b> · ${fmtInt(totals[ps[0].dataIndex])} ${terms.registrations}<br/>` +
+          ps.filter((p) => p.value).map((p) => `${p.marker} ${esc(p.seriesName)}: ${Math.round(p.value)}%`).join('<br/>'),
       },
       legend: { bottom: 0, itemWidth: 12, itemHeight: 12, textStyle: { color: C.ink2, fontSize: 11 } },
       grid: { left: 8, right: 16, top: 8, bottom: 28, containLabel: true },
@@ -275,7 +280,7 @@ export function initCommunity(root, data) {
   }
 
   function drawJobFamilies() {
-    const protectedGroups = disclosureGroups(slice.registrations, jobFamilyOf);
+    const protectedGroups = disclosureGroups(slice.registrations, jobFamilyOf, participantIdOf);
     if (protectedGroups.hasUnsafeRemainder) return hideChart(jobfamChart, 'Hidden because a total could reveal a small group.');
     const total = protectedGroups.groups.reduce((sum, group) => sum + group.count, 0) || 1;
     const items = protectedGroups.groups.sort((a, b) => b.count - a.count);
@@ -301,7 +306,7 @@ export function initCommunity(root, data) {
   }
 
   function drawSector() {
-    const protectedGroups = disclosureGroups(slice.registrations, sectorOf);
+    const protectedGroups = disclosureGroups(slice.registrations, sectorOf, participantIdOf);
     if (protectedGroups.hasUnsafeRemainder) {
       hideChart(sectorChart, 'Hidden because a total could reveal a small group.');
       root.querySelector('#sector-legend').innerHTML = '';
@@ -314,7 +319,7 @@ export function initCommunity(root, data) {
       ...baseChart,
       tooltip: {
         ...baseTooltip, trigger: 'axis', axisPointer: { type: 'shadow' },
-        formatter: (ps) => ps.filter((p) => p.value).map((p) => `${p.marker} ${p.seriesName}: <b>${fmtInt(counts.get(p.seriesName))}</b> (${Math.round(p.value)}%)`).join('<br/>'),
+        formatter: (ps) => ps.filter((p) => p.value).map((p) => `${p.marker} ${esc(p.seriesName)}: <b>${fmtInt(counts.get(p.seriesName))}</b> (${Math.round(p.value)}%)`).join('<br/>'),
       },
       grid: { left: 8, right: 60, top: 6, bottom: 6, containLabel: true },
       xAxis: { ...baseAxis, type: 'value', max: 100, show: false },
@@ -380,7 +385,7 @@ export function initCommunity(root, data) {
     if (segOutcome === 'return')
       return `Share of each segment's ${terms.participants} who registered for 2+ ${terms.events}, by ${dim}.`;
     if (segOutcome === 'sat')
-      return `Satisfaction mix by ${dim}: promoters scored 9–10, passives 7–8, detractors 6 or below.` + surveyNote;
+      return `Satisfaction mix by ${dim}: promoters scored ${satisfaction.promoterMin}–${satisfaction.max}, passives ${satisfaction.passiveMin}–${satisfaction.promoterMin - 1}, detractors ${satisfaction.passiveMin - 1} or below.` + surveyNote;
     return `Average "would you recommend" score by ${dim}, shown as the gap vs the overall average.` + surveyNote;
   }
 
@@ -472,7 +477,7 @@ export function initCommunity(root, data) {
         },
         legend: {
           bottom: 0, itemWidth: 12, itemHeight: 12, textStyle: { color: C.ink2, fontSize: 11 },
-          data: ['Promoters (9–10)', 'Passives (7–8)', 'Detractors (≤6)'],
+          data: [`Promoters (${satisfaction.promoterMin}–${satisfaction.max})`, `Passives (${satisfaction.passiveMin}–${satisfaction.promoterMin - 1})`, `Detractors (≤${satisfaction.passiveMin - 1})`],
         },
         grid: { ...base.grid, bottom: 46 },
         xAxis: {
@@ -480,9 +485,9 @@ export function initCommunity(root, data) {
           axisLabel: { ...baseAxis.axisLabel, formatter: '{value}%' },
         },
         series: [
-          mk('promoters', 'Promoters (9–10)', C.green),
-          mk('passives', 'Passives (7–8)', C.muted),
-          mk('detractors', 'Detractors (≤6)', C.jasper),
+          mk('promoters', `Promoters (${satisfaction.promoterMin}–${satisfaction.max})`, C.green),
+          mk('passives', `Passives (${satisfaction.passiveMin}–${satisfaction.promoterMin - 1})`, C.muted),
+          mk('detractors', `Detractors (≤${satisfaction.passiveMin - 1})`, C.jasper),
           nCap,
         ],
       }, true);
@@ -499,7 +504,7 @@ export function initCommunity(root, data) {
         ...baseTooltip,
         formatter: (p) => {
           const r = rows[p.dataIndex];
-          return `<b>${esc(r.bucket)}</b><br/>Avg recommend: <b>${fmtNum(r.avg)}</b> / 10 (overall ${fmtNum(overall)})<br/>` +
+          return `<b>${esc(r.bucket)}</b><br/>Avg recommend: <b>${fmtNum(r.avg)}</b> / ${recommendation.max} (overall ${fmtNum(overall)})<br/>` +
             `n=${fmtInt(r.n)} responses`;
         },
       },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadData } from './load';
-import { normalizeSource } from './normalize';
+import { normalizeSource, parseDate } from './normalize';
 import { validateSource } from './validate';
 import { DataContractError } from './contract';
 import { createSyntheticAdapter } from './adapters/synthetic';
@@ -85,6 +85,19 @@ describe('contract v1 normalization', () => {
     expect(normalized.source.dataClassification).toBe('synthetic');
   });
 
+  it('applies configured aliases to event fields', () => {
+    const normalized = validateSource(normalizeSource(bundle({
+      events: [{
+        event_id: 'event-1',
+        event_name: '   ',
+        title: 'Aliased event title',
+        event_date: '2026-01-10',
+      }],
+    })));
+
+    expect(normalized.datasets.events[0].event_name).toBe('Aliased event title');
+  });
+
   it('preserves missing optional measurements as null instead of zero', () => {
     const normalized = validateSource(normalizeSource(bundle({
       events: [{ event_id: 'event-1', event_name: 'Community meetup', event_date: '2026-01-10' }],
@@ -119,6 +132,36 @@ describe('contract v1 normalization', () => {
     }));
 
     expect(() => validateSource(invalid)).toThrowError(/validation failed/i);
+  });
+
+  it('rejects ratings outside the configured scale', () => {
+    const invalid = normalizeSource(bundle({
+      surveyResponses: [{
+        response_id: 'response-1',
+        event_id: 'event-1',
+        satisfaction: '11',
+        recommend: '0',
+      }],
+    }));
+
+    expect(() => validateSource(invalid)).toThrow(DataContractError);
+    expect(invalid.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'rating_out_of_range', field: 'satisfaction' }),
+      expect.objectContaining({ code: 'rating_out_of_range', field: 'recommend' }),
+    ]));
+  });
+
+  it('rejects impossible calendar dates', () => {
+    expect(parseDate('2026-02-29', 'UTC')).toBeNull();
+    expect(parseDate('2026-13-01', 'UTC')).toBeNull();
+    expect(parseDate('not a date', 'UTC')).toBeNull();
+    expect(parseDate('2026-01-10', 'Not/A_Timezone')).toBeNull();
+  });
+
+  it('anchors date-only values in the reporting timezone', () => {
+    expect(parseDate('2026-01-10', 'Asia/Singapore')?.toISOString()).toBe('2026-01-10T04:00:00.000Z');
+    expect(parseDate('2026-01-10', 'America/New_York')?.toISOString()).toBe('2026-01-10T17:00:00.000Z');
+    expect(parseDate('2026-01-10T23:30:00-05:00', 'Asia/Singapore')?.toISOString()).toBe('2026-01-11T04:00:00.000Z');
   });
 });
 

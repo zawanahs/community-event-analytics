@@ -35,7 +35,17 @@ export function kpisEffectiveness(slice) {
   }
   const hotTopic = [...byTopic.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
 
-  return { uniqueEvents, avgSatisfaction, responseRate, responses: responseCount, totalAttended, totalRegistered, returningRate, hotTopic };
+  return {
+    uniqueEvents,
+    avgSatisfaction,
+    responseRate,
+    responses: responseCount,
+    totalAttended,
+    totalRegistered,
+    returningRate,
+    returningPopulation: people.size,
+    hotTopic,
+  };
 }
 
 // ── overall verdict, from the satisfaction rating ────────────────────────────
@@ -43,7 +53,10 @@ export function kpisEffectiveness(slice) {
 // which survey question was answered (every "what was good" answer scores
 // positive by construction), so it cannot say whether attendees were happy.
 // satisfaction_1_10 is a rating attendees actually gave.
-export const SAT_BANDS = { positive: 8, neutral: 6 };
+export const SAT_BANDS = {
+  positive: communityConfig.ratings.satisfaction.verdictPositiveMin,
+  neutral: communityConfig.ratings.satisfaction.verdictNeutralMin,
+};
 
 export function satisfactionVerdict(responses) {
   const sats = responses.map((r) => r.satisfaction).filter((v) => v != null);
@@ -131,7 +144,7 @@ export function kpisCommunity(slice) {
   const topSector = [...sectorCounts.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
   const sectorTotal = registrations.length;
 
-  return { uniquePeople: people.size, genderCounts, returningRate, topSector, sectorTotal };
+  return { uniquePeople: people.size, genderCounts, returningRate, returningPopulation: persons.length, topSector, sectorTotal };
 }
 
 export function countBy(rows, keyFn) {
@@ -182,8 +195,8 @@ export function distributionByYoe(slice) {
     if (r.satisfaction == null) continue;
     const bucket = r.experience_segment ?? 'Not stated';
     const g = groups.get(bucket) ?? { promoters: 0, passives: 0, detractors: 0, n: 0 };
-    if (r.satisfaction >= 9) g.promoters++;
-    else if (r.satisfaction >= 7) g.passives++;
+    if (r.satisfaction >= communityConfig.ratings.satisfaction.promoterMin) g.promoters++;
+    else if (r.satisfaction >= communityConfig.ratings.satisfaction.passiveMin) g.passives++;
     else g.detractors++;
     g.n++;
     groups.set(bucket, g);
@@ -211,4 +224,3 @@ export function returningBySegment(slice, keyFn) {
     directional: false,
   }));
 }
-

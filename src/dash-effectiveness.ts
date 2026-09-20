@@ -6,9 +6,10 @@ import { kpisEffectiveness, quadrantPoints, quadrantAction, satisfactionVerdict,
 import { isNonAnswer, extractThemes, pickQuotes, buildActions, minHitsFor, unmatchedCount, matchExcerpt, KEEP_RULES, FIX_RULES } from './sentiment';
 import { kpiCard, verdictBannerHtml, renderFeedbackBoard, esc } from './components';
 import { communityConfig } from './config';
-import { canShowFeedback } from './privacy';
+import { canShowFeedback, isDisclosureSafe } from './privacy';
 
 const terms = communityConfig.terminology;
+const satisfaction = communityConfig.ratings.satisfaction;
 
 export function initEffectiveness(root, data) {
   root.innerHTML = `
@@ -30,7 +31,7 @@ export function initEffectiveness(root, data) {
     </div>
 
     <h2 class="section-title">What attendees said</h2>
-    <p class="section-note">The verdict is the satisfaction rating attendees gave (1–10). The themes and comments beneath it come from the free-text answers, grouped by the question asked. Everything in this section follows the bubble you select above.</p>
+    <p class="section-note">The verdict is the satisfaction rating attendees gave (${satisfaction.min}–${satisfaction.max}). The themes and comments beneath it come from the free-text answers, grouped by the question asked. Everything in this section follows the bubble you select above.</p>
 
     <div class="card verdict-card" id="senti-verdict"></div>
 
@@ -82,11 +83,14 @@ export function initEffectiveness(root, data) {
 
   function drawKpis() {
     const k = kpisEffectiveness(slice);
+    const returningSummary = isDisclosureSafe(k.returningPopulation)
+      ? `${fmtPct(k.returningRate)} are returning ${terms.participants}`
+      : 'Returning share hidden below the privacy threshold';
     root.querySelector('#eff-kpis').innerHTML = [
       kpiCard(fmtInt(k.uniqueEvents), communityConfig.terminology.events[0].toUpperCase() + communityConfig.terminology.events.slice(1), `unique ${terms.events} in view`),
-      kpiCard(fmtNum(k.avgSatisfaction), 'Avg satisfaction', 'mean of survey scores', '/ 10'),
+      kpiCard(fmtNum(k.avgSatisfaction), 'Avg satisfaction', 'mean of survey scores', `/ ${satisfaction.max}`),
       kpiCard(fmtPct(k.responseRate), 'Response rate', `${fmtInt(k.responses)} responses ÷ ${fmtInt(k.totalAttended)} attendees`),
-      kpiCard(fmtInt(k.totalRegistered), terms.registrations[0].toUpperCase() + terms.registrations.slice(1), `${fmtPct(k.returningRate)} are returning ${terms.participants}`),
+      kpiCard(fmtInt(k.totalRegistered), terms.registrations[0].toUpperCase() + terms.registrations.slice(1), returningSummary),
       kpiCard(k.hotTopic ? esc(k.hotTopic[0]) : '–', 'Hot topic', k.hotTopic ? `${fmtInt(k.hotTopic[1])} attendees` : ''),
     ].join('');
   }
@@ -107,7 +111,7 @@ export function initEffectiveness(root, data) {
           formatter: (p) => {
             const d = p.data.meta;
             return `<b>${esc(d.name)}</b><br/>${esc(d.detail)}<br/>
-              Satisfaction: <b>${fmtNum(d.satisfaction)}</b> / 10 · Demand index: <b>${fmtNum(d.demand, 2)}</b><br/>
+              Satisfaction: <b>${fmtNum(d.satisfaction)}</b> / ${satisfaction.max} · Demand index: <b>${fmtNum(d.demand, 2)}</b><br/>
               Suggested action: <b>${quadrantAction(d.satisfaction, d.demand, refs)}</b>`;
           },
         },
@@ -117,7 +121,7 @@ export function initEffectiveness(root, data) {
           nameLocation: 'middle', nameGap: 28, min: 0, max: +maxDemand.toFixed(1),
         },
         yAxis: {
-          ...baseAxis, type: 'value', name: 'Satisfaction (1–10)',
+          ...baseAxis, type: 'value', name: `Satisfaction (${satisfaction.min}–${satisfaction.max})`,
           nameLocation: 'middle', nameGap: 34,
           min: Math.max(0, Math.floor(Math.min(refs.medianSatisfaction, ...points.map((p) => p.satisfaction)) - 1)),
           max: 10,

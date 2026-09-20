@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security or privacy report
-    url: https://github.com/OWNER/REPOSITORY/security/advisories/new
-    about: Replace OWNER/REPOSITORY after creating your repository, then use private reporting for sensitive issues.
+    url: https://github.com/zawanahs/community-event-analytics/security/advisories/new
+    about: Use private reporting for security vulnerabilities or possible participant-data exposure.
